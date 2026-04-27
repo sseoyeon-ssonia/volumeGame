@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>회원가입</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at top, #fff, #f1f1f1 55%, #ddd);
+      color: #111;
+      font-family: Arial, sans-serif;
+    }
+
+    .app {
+      width: 560px;
+      max-width: 92vw;
+      min-height: 600px;
+      padding: 42px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 28px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, .12);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .desc {
+      margin: 0 0 28px;
+      color: #666;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .guess-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    #guessInput {
+      flex: 1;
+      height: 48px;
+      padding: 0 14px;
+      border: 2px solid #111;
+      border-radius: 12px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    #guessBtn {
+      width: 96px;
+      border: 0;
+      border-radius: 12px;
+      background: #111;
+      color: white;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .found-info {
+      margin-bottom: 14px;
+      color: #777;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .signup-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field-card {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid #e1e1e1;
+      border-radius: 14px;
+      background: #fafafa;
+      animation: pop .24s ease both;
+    }
+
+    .field-card label {
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .field-card input,
+    .field-card select {
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid #aaa;
+      border-radius: 10px;
+      background: white;
+      font-size: 14px;
+      outline: none;
+    }
+
+    @keyframes pop {
+      from { opacity: 0; transform: translateY(-8px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .real-signup-btn {
+      display: none;
+      width: 100%;
+      height: 50px;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 999px;
+      background: #111;
+      color: white;
+      font-size: 17px;
+      font-weight: 900;
+      cursor: pointer;
+      animation: pop .24s ease both;
+    }
+
+    .real-signup-btn.show {
+      display: block;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, .35);
+      z-index: 10;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 320px;
+      padding: 30px 24px;
+      border-radius: 24px;
+      background: white;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,.25);
+      animation: shake .25s ease both;
+    }
+
+    .monkey {
+      font-size: 58px;
+      margin-bottom: 8px;
+    }
+
+    .modal-card h2 {
+      margin: 0 0 12px;
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .modal-card p {
+      margin: 0 0 18px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .modal-card button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 22px;
+      background: #111;
+      color: white;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      50% { transform: translateX(8px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>회원가입</h1>
+    <p class="desc">알아맞혀보숭</p>
+
+    <div class="guess-box">
+      <input id="guessInput" type="text" placeholder="맞혀보숭" autocomplete="off" />
+      <button id="guessBtn">추측하기</button>
+    </div>
+
+    <div class="found-info" id="foundInfo">찾은 요소 0 / 8</div>
+
+    <form class="signup-form" id="signupForm"></form>
+    <button class="real-signup-btn" id="realSignupBtn">가입하기</button>
+  </main>
+
+  <div class="modal" id="wrongModal">
+    <div class="modal-card">
+      <div class="monkey">🐵</div>
+      <h2>ㅋㅋ 다시 맞히숭</h2>
+      <p>틀렸습니다.<br>이미 맞힌 입력칸이 전부 사라집니다.</p>
+      <button id="closeModalBtn">회원가입하기</button>
+    </div>
+  </div>
+
+  <script>
+    const guessInput = document.getElementById('guessInput');
+    const guessBtn = document.getElementById('guessBtn');
+    const signupForm = document.getElementById('signupForm');
+    const realSignupBtn = document.getElementById('realSignupBtn');
+    const wrongModal = document.getElementById('wrongModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const foundInfo = document.getElementById('foundInfo');
+
+    const requiredFields = {
+      '아이디': { label: '아이디', type: 'text', placeholder: '아이디를 입력하세요' },
+      '비밀번호': { label: '비밀번호', type: 'password', placeholder: '비밀번호를 입력하세요' },
+      '이메일': { label: '이메일', type: 'email', placeholder: '이메일을 입력하세요' },
+      '닉네임': { label: '닉네임', type: 'text', placeholder: '닉네임을 입력하세요' },
+      '성별': { label: '성별', type: 'select', options: ['선택', '남성', '여성', '비공개'] },
+      '계좌번호': { label: '계좌번호', type: 'text', placeholder: '계좌번호를 입력하세요' },
+      '은행': { label: '은행', type: 'select', options: ['선택', '국민은행', '신한은행', '우리은행', '하나은행'] },
+      '전화번호': { label: '전화번호', type: 'tel', placeholder: '전화번호를 입력하세요' }
+    };
+
+    const signupKeyword = '가입하기';
+    const found = new Set();
+
+    function updateFoundInfo() {
+      foundInfo.textContent = `찾은 요소 ${found.size} / ${Object.keys(requiredFields).length}`;
+    }
+
+    function resetAll() {
+      found.clear();
+      signupForm.innerHTML = '';
+      realSignupBtn.classList.remove('show');
+      updateFoundInfo();
+    }
+
+    function showWrongModal() {
+      resetAll();
+      wrongModal.classList.add('show');
+    }
+
+    function revealField(word) {
+      if (found.has(word)) return;
+
+      found.add(word);
+      updateFoundInfo();
+
+      const field = requiredFields[word];
+      const card = document.createElement('div');
+      card.className = 'field-card';
+
+      if (field.type === 'select') {
+        card.innerHTML = `
+          <label>${field.label}</label>
+          <select>${field.options.map(option => `<option>${option}</option>`).join('')}</select>
+        `;
+      } else {
+        card.innerHTML = `
+          <label>${field.label}</label>
+          <input type="${field.type}" placeholder="${field.placeholder}" />
+        `;
+      }
+
+      signupForm.appendChild(card);
+    }
+
+    function guess() {
+      const word = guessInput.value.trim();
+      if (!word) return;
+
+      guessInput.value = '';
+
+      if (requiredFields[word]) {
+        revealField(word);
+        return;
+      }
+
+      if (word === signupKeyword) {
+        const allFound = Object.keys(requiredFields).every(key => found.has(key));
+
+        if (allFound) {
+          realSignupBtn.classList.add('show');
+        } else {
+          showWrongModal();
+        }
+        return;
+      }
+
+      showWrongModal();
+    }
+
+    guessBtn.addEventListener('click', guess);
+    guessInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') guess();
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      wrongModal.classList.remove('show');
+      guessInput.focus();
+    });
+
+    realSignupBtn.addEventListener('click', () => {
+      alert('회원가입 성공... 인 척했습니다 🐵');
+    });
+
+    updateFoundInfo();
+  </script>
+</body>
+</html>
