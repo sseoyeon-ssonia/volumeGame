@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bad UI Volume Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at top, #24243e, #141414 55%, #000);
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 390px;
+      max-width: 94vw;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .desc {
+      margin: 0 0 16px;
+      color: #cfcfcf;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .panel {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      min-width: 124px;
+      padding: 10px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+    }
+
+    .label {
+      color: #aaa;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .game {
+      position: relative;
+      height: 540px;
+      max-height: 68vh;
+      background: linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.04));
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.5);
+    }
+
+    .emoji {
+      position: absolute;
+      left: 50%;
+      top: 90px;
+      width: 52px;
+      height: 52px;
+      transform: translate(-50%, -50%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 44px;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,.45));
+      z-index: 3;
+    }
+
+    .paddle {
+      position: absolute;
+      left: 50%;
+      bottom: 28px;
+      width: 96px;
+      height: 18px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: white;
+      box-shadow: 0 0 18px rgba(255,255,255,.65);
+      z-index: 2;
+    }
+
+    .volume-bar {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 18px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      overflow: hidden;
+    }
+
+    .volume-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #40c9ff, #e81cff);
+      transition: width .15s ease;
+    }
+
+    .start-screen,
+    .game-over {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 26px;
+      background: rgba(0,0,0,.62);
+      backdrop-filter: blur(6px);
+      z-index: 10;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    button {
+      margin-top: 16px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      background: white;
+      color: #111;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .warning {
+      margin-top: 10px;
+      color: #ffdf7e;
+      font-size: 12px;
+    }
+
+    .sound-test {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #bbb;
+    }
+
+    .danger {
+      animation: dangerFlash .22s infinite alternate;
+    }
+
+    @keyframes dangerFlash {
+      from { border-color: rgba(255,255,255,.25); }
+      to { border-color: rgba(255,55,95,.9); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Emoji Bounce Volume</h1>
+
+    <div class="panel">
+      <div class="stat">
+        <div class="label">VOLUME</div>
+        <div class="value" id="volumeText">0%</div>
+      </div>
+    </div>
+
+    <div class="game" id="game">
+      <div class="volume-bar">
+        <div class="volume-fill" id="volumeFill"></div>
+      </div>
+
+      <div class="emoji" id="emoji">💩</div>
+      <div class="paddle" id="paddle"></div>
+
+      <div class="start-screen" id="startScreen">
+        <h2>볼륨을 올리고 싶나요?</h2>
+        <button id="startBtn">게임으로 볼륨 조절하기</button>
+      </div>
+
+      <div class="game-over hidden" id="gameOverScreen">
+        <h2>볼륨 조절 실패</h2>
+        <p id="finalText">최종 볼륨: 0%</p>
+        <button id="restartBtn">다시 조절하기</button>
+        <div class="sound-test">점수가 높을수록 테스트 삐 소리가 커집니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const game = document.getElementById('game');
+    const emoji = document.getElementById('emoji');
+    const paddle = document.getElementById('paddle');
+    
+    const volumeText = document.getElementById('volumeText');
+    
+    const volumeFill = document.getElementById('volumeFill');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalText = document.getElementById('finalText');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let gameRect;
+    let paddleX;
+    let emojiX, emojiY;
+    let vx, vy;
+    let score = 0;
+    let volume = 0;
+    let running = false;
+    let animationId;
+    let lastTime = 0;
+    let audioContext;
+
+    const emojiList = ['💩'];
+
+    function resetGame() {
+      gameRect = game.getBoundingClientRect();
+      paddleX = gameRect.width / 2;
+      emojiX = gameRect.width / 2;
+      emojiY = 90;
+      vx = 160;
+      vy = 210;
+      score = 0;
+      volume = 0;
+      lastTime = 0;
+      game.classList.remove('danger');
+      updateUI();
+      render();
+    }
+
+    function updateUI() {
+      volume = Math.min(100, score * 2);
+      volumeText.textContent = volume + '%';
+      volumeFill.style.width = volume + '%';
+
+      if (volume >= 80) game.classList.add('danger');
+      else game.classList.remove('danger');
+    }
+
+    function render() {
+      emoji.style.left = emojiX + 'px';
+      emoji.style.top = emojiY + 'px';
+      paddle.style.left = paddleX + 'px';
+    }
+
+    function startGame() {
+      resetGame();
+      running = true;
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      initAudio();
+      animationId = requestAnimationFrame(loop);
+    }
+
+    function gameOver() {
+      running = false;
+      cancelAnimationFrame(animationId);
+      finalText.textContent = `최종 점수: ${score}점 / 최종 볼륨: ${volume}%`;
+      gameOverScreen.classList.remove('hidden');
+      playBeep(220, 0.12);
+    }
+
+    function loop(timestamp) {
+      if (!running) return;
+
+      if (!lastTime) lastTime = timestamp;
+      const delta = Math.min((timestamp - lastTime) / 1000, 0.02);
+      lastTime = timestamp;
+
+      const speedMultiplier = 1 + score * 0.30;
+      emojiX += vx * speedMultiplier * delta;
+      emojiY += vy * speedMultiplier * delta;
+
+      const radius = 26;
+      const paddleWidth = paddle.offsetWidth;
+      const paddleHeight = paddle.offsetHeight;
+      const paddleTop = gameRect.height - 28 - paddleHeight;
+      const paddleLeft = paddleX - paddleWidth / 2;
+      const paddleRight = paddleX + paddleWidth / 2;
+
+      if (emojiX <= radius) {
+        emojiX = radius;
+        vx *= -1;
+        playBeep(420, 0.025);
+      }
+      if (emojiX >= gameRect.width - radius) {
+        emojiX = gameRect.width - radius;
+        vx *= -1;
+        playBeep(420, 0.025);
+      }
+      if (emojiY <= 44) {
+        emojiY = 44;
+        vy *= -1;
+        playBeep(520, 0.025);
+      }
+
+      const hitPaddle =
+        emojiY + radius >= paddleTop &&
+        emojiY + radius <= paddleTop + paddleHeight + 12 &&
+        emojiX >= paddleLeft &&
+        emojiX <= paddleRight &&
+        vy > 0;
+
+      if (hitPaddle) {
+        emojiY = paddleTop - radius;
+        vy *= -1;
+        const hitOffset = (emojiX - paddleX) / (paddleWidth / 2);
+        vx = hitOffset * 260;
+        score++;
+        emoji.textContent = emojiList[score % emojiList.length];
+        updateUI();
+        playBeep(660 + score * 25, 0.045);
+      }
+
+      if (emojiY > gameRect.height + 40) {
+        gameOver();
+        return;
+      }
+
+      render();
+      animationId = requestAnimationFrame(loop);
+    }
+
+    function movePaddle(clientX) {
+      gameRect = game.getBoundingClientRect();
+      const x = clientX - gameRect.left;
+      const half = paddle.offsetWidth / 2;
+      paddleX = Math.max(half + 8, Math.min(gameRect.width - half - 8, x));
+      render();
+    }
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') audioContext.resume();
+    }
+
+    function playBeep(freq, duration) {
+      if (!audioContext) return;
+
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const now = audioContext.currentTime;
+
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+
+      // 실제 오디오 볼륨도 점수 기반으로 커짐
+      gain.gain.setValueAtTime(Math.max(0.01, volume / 100 * 0.18), now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    game.addEventListener('mousemove', (e) => movePaddle(e.clientX));
+    game.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      movePaddle(e.touches[0].clientX);
+    }, { passive: false });
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    window.addEventListener('resize', resetGame);
+    resetGame();
+  </script>
+</body>
+</html>
